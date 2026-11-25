@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Detector - Cybersecurity Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0d14;
+            --bg-surface: #121824;
+            --bg-card: #182234;
+            --border: #223048;
+            --border-hover: #33486c;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent-cyan: #38bdf8;
+            --accent-indigo: #818cf8;
+            --safe-color: #22c55e;
+            --safe-bg: rgba(34, 197, 94, 0.12);
+            --caution-color: #f59e0b;
+            --caution-bg: rgba(245, 158, 11, 0.12);
+            --danger-color: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.14);
+            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Ambient Glow */
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(129, 140, 248, 0.05) 50%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: var(--accent-cyan);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            max-width: 620px;
+            margin: 0 auto;
+        }
+
+        /* Search & Input Card */
+        .scanner-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .url-input {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.9rem 1.2rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: var(--font-mono);
+            transition: all 0.2s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.9rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-scan:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Preset Chips */
+        .presets {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .presets span {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 500;
+            margin-right: 0.3rem;
+        }
+
+        .preset-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-btn:hover {
+            color: var(--text-main);
+            border-color: var(--border-hover);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Results Display */
+        #results-container {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .verdict-banner {
+            display: grid;
+            grid-template-columns: 1fr 1fr 2fr;
+            gap: 1.5rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .input-group { flex-direction: column; }
+            .verdict-banner { grid-template-columns: 1fr; }
+        }
+
+        .metric-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .metric-title {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            width: fit-content;
+        }
+
+        .badge-low {
+            background: var(--safe-bg);
+            color: var(--safe-color);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-medium {
+            background: var(--caution-bg);
+            color: var(--caution-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-high {
+            background: var(--danger-bg);
+            color: var(--danger-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .score-val {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+            font-family: var(--font-mono);
+        }
+
+        .score-max {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+        }
+
+        .summary-text {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Rules Grid */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .rules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .rule-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.1rem 1.4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+            transition: all 0.15s ease;
+        }
+
+        .rule-card.triggered {
+            border-left: 4px solid var(--danger-color);
+            background: rgba(239, 68, 68, 0.04);
+        }
+
+        .rule-card.passed {
+            border-left: 4px solid var(--safe-color);
+            background: rgba(34, 197, 94, 0.02);
+        }
+
+        .rule-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rule-info p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        .rule-badge {
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .rule-badge.alert {
+            background: var(--danger-bg);
+            color: var(--danger-color);
+        }
+
+        .rule-badge.pass {
+            background: var(--safe-bg);
+            color: var(--safe-color);
+        }
+
+        /* Disclaimer */
+        .disclaimer-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+
+    <div class="container">
+        <header>
+            <div class="badge-tag">
+                🛡️ Offline Heuristic Cybersecurity Engine
+            </div>
+            <h1>Phishing URL Detector</h1>
+            <p class="subtitle">Protect yourself from deceptive links, malicious redirects, and credential-harvesting websites in real time.</p>
+        </header>
+
+        <section class="scanner-card">
+            <div class="input-group">
+                <input type="text" id="urlInput" class="url-input" placeholder="e.g. https://secure.bank.com/login or http://192.168.1.1/verify" autocomplete="off" spellcheck="false">
+                <button id="scanBtn" class="btn-scan">
+                    <span>🔍</span> Analyze URL
+                </button>
+            </div>
+            <div class="presets">
+                <span>Quick Test Presets:</span>
+                <button class="preset-btn" onclick="setURL('https://www.wikipedia.org/wiki/Computer_science')">🟢 Safe Wikipedia</button>
+                <button class="preset-btn" onclick="setURL('http://bit.ly/verify-account-update-2026')">🟡 Shortener & Keyword</button>
+                <button class="preset-btn" onclick="setURL('http://paypal.verification-account-security-update.xyz/login.php')">🔴 Deceptive Subdomain</button>
+                <button class="preset-btn" onclick="setURL('http://192.168.1.100/banking/login.php')">🔴 Raw IP Host</button>
+            </div>
+        </section>
+
+        <main id="results-container">
+            <div class="verdict-banner">
+                <div class="metric-box">
+                    <span class="metric-title">Overall Threat Level</span>
+                    <div id="riskBadge" class="status-badge badge-low">
+                        <span id="riskEmoji">🟢</span> <span id="riskLevelText">LOW RISK</span>
+                    </div>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-title">Calculated Risk Score</span>
+                    <div>
+                        <span id="scoreVal" class="score-val" style="color: var(--safe-color);">0</span>
+                        <span class="score-max">/ 100</span>
+                    </div>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-title">Analysis Summary</span>
+                    <p id="summaryText" class="summary-text">No major suspicious indicators detected.</p>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h3 class="section-title">Heuristic Rules Evaluation (8 Attack Vectors)</h3>
+                <span id="triggeredCount" style="color: var(--text-dim); font-size: 0.9rem; font-weight: 600;">0 of 8 Triggered</span>
+            </div>
+
+            <div id="rulesList" class="rules-list">
+                <!-- Dynamically generated rule cards -->
+            </div>
+
+            <div class="disclaimer-card">
+                <strong>🛡️ Educational Notice:</strong> This analysis uses offline syntactic heuristics. Do not assume or claim that a URL is 100% safe or malicious based only on these rules. Always verify the exact domain name before entering credentials.
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        Phishing URL Detector &bull; Educational Cybersecurity Project &bull; Built with Python & Modern Web Standards
+    </footer>
+
+    <script>
+        // Detection Logic Constants
+        const KNOWN_SHORTENERS = new Set([
+            "bit.ly", "tinyurl.com", "goo.gl", "ow.ly", "t.co", "is.gd", "buff.ly",
+            "adf.ly", "bit.do", "mcaf.ee", "su.pr", "rebrand.ly", "cutt.ly",
+            "shorturl.at", "tiny.cc", "qr.ae", "v.gd", "clck.ru", "rb.gy"
+        ]);
+
+        const SUSPICIOUS_TLDS = new Set([
+            "xyz", "top", "work", "click", "loan", "fit", "surf", "gq", "tk", "ml",
+            "cf", "ga", "buzz", "rest", "bar", "live", "icu", "cam", "quest",
+            "monster", "tokyo", "download", "racing", "kim", "party", "science",
+            "cricket", "faith", "club", "cfd", "online"
+        ]);
+
+        const SUSPICIOUS_KEYWORDS = [
+            "login", "signin", "verify", "verification", "update", "banking", "secure",
+            "security", "account", "wallet", "crypto", "confirm", "confirmation",
+            "password", "validation", "authenticate", "billing", "invoice", "support",
+            "recovery", "claim", "airdrop", "reward", "free", "bonus", "alert",
+            "suspend", "suspended", "unlock", "re-activate", "authorise", "authorize",
+            "auth", "logon", "access"
+        ];
+
+        const IP_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+        function setURL(url) {
+            document.getElementById('urlInput').value = url;
+            analyzeURL();
+        }
+
+        document.getElementById('scanBtn').addEventListener('click', analyzeURL);
+        document.getElementById('urlInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') analyzeURL();
+        });
+
+        function parseSubdomains(hostname, isIP) {
+            if (!hostname || isIP) return [];
+            const parts = hostname.split('.');
+            if (parts.length <= 2) return [];
+            const cctlds = new Set(["uk", "au", "br", "in", "nz", "za", "ca", "mx", "sg"]);
+            const secondLevels = new Set(["co", "com", "org", "gov", "net", "edu", "ac"]);
+            if (parts.length >= 3 && cctlds.has(parts[parts.length - 1]) && secondLevels.has(parts[parts.length - 2])) {
+                return parts.slice(0, parts.length - 3);
+            }
+            return parts.slice(0, parts.length - 2);
+        }
+
+        function analyzeURL() {
+            const rawUrl = document.getElementById('urlInput').value.trim();
+            if (!rawUrl) {
+                alert("Please enter a URL to inspect.");
+                return;
+            }
+
+            let normalizedUrl = rawUrl;
+            if (!/^https?:\/\//i.test(rawUrl)) {
+                normalizedUrl = "http://" + rawUrl;
+            }
+
+            let parsed;
+            try {
+                parsed = new URL(normalizedUrl);
+            } catch (e) {
+                alert("Invalid URL syntax: Unable to parse domain.");
+                return;
+            }
+
+            const hostname = (parsed.hostname || "").toLowerCase();
+            const path = parsed.pathname || "";
+            const rawLower = rawUrl.toLowerCase();
+            const isIP = IP_REGEX.test(hostname);
+
+            let totalScore = 0;
+            const indicators = [];
+
+            // Rule 1: URL Length
+            const urlLen = rawUrl.length;
+            let r1Triggered = false, r1Points = 0, r1Details = "";
+            if (urlLen > 75) {
+                r1Triggered = true; r1Points = 15;
+                r1Details = `Abnormally long URL (${urlLen} characters). Attackers use long paths to hide tokens or deceptive domains.`;
+            } else if (urlLen > 54) {
+                r1Triggered = true; r1Points = 8;
+                r1Details = `Moderately long URL (${urlLen} characters).`;
+            } else {
+                r1Details = `Standard concise URL length (${urlLen} characters).`;
+            }
+            totalScore += r1Points;
+            indicators.push({ id: 1, name: "URL Length Detection", triggered: r1Triggered, score: r1Points, max: 15, details: r1Details });
+
+            // Rule 2: HTTPS Protocol
+            const hasHttps = parsed.protocol === "https:";
+            const r2Triggered = !hasHttps;
+            const r2Points = r2Triggered ? 15 : 0;
+            const r2Details = r2Triggered ? "Insecure HTTP protocol. Credentials sent in plaintext can be intercepted." : "Secure HTTPS protocol detected.";
+            totalScore += r2Points;
+            indicators.push({ id: 2, name: "HTTPS Protocol Detection", triggered: r2Triggered, score: r2Points, max: 15, details: r2Details });
+
+            // Rule 3: IP Address Hostname
+            const r3Triggered = isIP;
+            const r3Points = r3Triggered ? 30 : 0;
+            const r3Details = r3Triggered ? `Raw IP address (${hostname}) used instead of a registered domain. Attackers use direct IPs to evade domain name registration and DNS blacklists.` : `Uses standard registered domain format (${hostname}).`;
+            totalScore += r3Points;
+            indicators.push({ id: 3, name: "IP Address-Based Hostname", triggered: r3Triggered, score: r3Points, max: 30, details: r3Details });
+
+            // Rule 4: Suspicious Keywords
+            const matchedKeywords = SUSPICIOUS_KEYWORDS.filter(kw => rawLower.includes(kw));
+            let r4Triggered = false, r4Points = 0, r4Details = "";
+            if (matchedKeywords.length >= 2) {
+                r4Triggered = true; r4Points = 20;
+                r4Details = `Multiple sensitive action keywords detected (${matchedKeywords.slice(0, 4).join(', ')}). Commonly associated with credential theft.`;
+            } else if (matchedKeywords.length === 1) {
+                r4Triggered = true; r4Points = 10;
+                r4Details = `Sensitive action keyword detected: '${matchedKeywords[0]}'.`;
+            } else {
+                r4Details = "No suspicious action keywords detected in URL string.";
+            }
+            totalScore += r4Points;
+            indicators.push({ id: 4, name: "Suspicious Keyword Detection", triggered: r4Triggered, score: r4Points, max: 20, details: r4Details });
+
+            // Rule 5: URL Shortener
+            const isShortened = KNOWN_SHORTENERS.has(hostname);
+            const r5Triggered = isShortened;
+            const r5Points = r5Triggered ? 15 : 0;
+            const r5Details = r5Triggered ? `Known URL shortening service detected (${hostname}), hiding the true destination link.` : "Does not match standard URL shortener domains.";
+            totalScore += r5Points;
+            indicators.push({ id: 5, name: "URL Shortener Service Detection", triggered: r5Triggered, score: r5Points, max: 15, details: r5Details });
+
+            // Rule 6: Excessive Subdomains
+            const subdomains = parseSubdomains(hostname, isIP);
+            let r6Triggered = false, r6Points = 0, r6Details = "";
+            if (subdomains.length >= 3) {
+                r6Triggered = true; r6Points = 15;
+                r6Details = `Excessive subdomains (${subdomains.length} levels: ${subdomains.join('.')}). Attackers chain subdomains to mimic trusted brand portals.`;
+            } else if (subdomains.length === 2) {
+                r6Triggered = true; r6Points = 8;
+                r6Details = `Multiple subdomains detected (${subdomains.length} levels: ${subdomains.join('.')}).`;
+            } else {
+                r6Details = `Normal subdomain structure (${subdomains.length} levels).`;
+            }
+            totalScore += r6Points;
+            indicators.push({ id: 6, name: "Excessive Subdomain Detection", triggered: r6Triggered, score: r6Points, max: 15, details: r6Details });
+
+            // Rule 7: Special Characters (@, -, //)
+            const hasAt = rawUrl.includes('@');
+            const hyphenCount = (hostname.match(/-/g) || []).length;
+            const hasDoubleSlash = path.includes('//');
+            const issues = [];
+            let r7Score = 0;
+            if (hasAt) { r7Score += 20; issues.push("'@' symbol found (browser credential trick)"); }
+            if (hyphenCount >= 2) { r7Score += 10; issues.push(`${hyphenCount} hyphens in domain (brand spoofing)`); }
+            if (hasDoubleSlash) { r7Score += 10; issues.push("'//' inside path (open redirect trick)"); }
+            const r7Points = Math.min(r7Score, 30);
+            const r7Triggered = issues.length > 0;
+            const r7Details = r7Triggered ? `Special character anomalies detected: ${issues.join('; ')}.` : "No deceptive special characters detected.";
+            totalScore += r7Points;
+            indicators.push({ id: 7, name: "Special Character Detection (@, -, //)", triggered: r7Triggered, score: r7Points, max: 30, details: r7Details });
+
+            // Rule 8: Suspicious Domain Patterns
+            const tld = !isIP && hostname.includes('.') ? hostname.split('.').pop() : "";
+            const isSuspiciousTLD = SUSPICIOUS_TLDS.has(tld);
+            const hasPunycode = hostname.includes("xn--");
+            const hasHex = rawUrl.includes('%');
+            const pIssues = [];
+            let r8Score = 0;
+            if (isSuspiciousTLD) { r8Score += 15; pIssues.push(`High-abuse top-level domain (.${tld})`); }
+            if (hasPunycode) { r8Score += 10; pIssues.push("Punycode / IDN homograph pattern ('xn--') detected"); }
+            if (hasHex) { r8Score += 5; pIssues.push("Hex/URL percentage encoding (%xx) detected"); }
+            const r8Points = Math.min(r8Score, 25);
+            const r8Triggered = pIssues.length > 0;
+            const r8Details = r8Triggered ? `Suspicious patterns detected: ${pIssues.join('; ')}.` : `Standard domain pattern with recognized TLD (.${tld || 'standard'}).`;
+            totalScore += r8Points;
+            indicators.push({ id: 8, name: "Suspicious Domain Pattern Detection", triggered: r8Triggered, score: r8Points, max: 25, details: r8Details });
+
+            // Final Aggregation
+            const finalScore = Math.min(totalScore, 100);
+            let riskLevel = "LOW RISK", badgeClass = "badge-low", emoji = "🟢", scoreColor = "var(--safe-color)";
+            let summary = "No major suspicious indicators detected. URL follows standard conventions with a valid structure. Always confirm spelling before submitting credentials.";
+
+            if (finalScore >= 65) {
+                riskLevel = "HIGH RISK";
+                badgeClass = "badge-high";
+                emoji = "🔴";
+                scoreColor = "var(--danger-color)";
+                summary = "Multiple critical suspicious indicators detected! This URL exhibits significant phishing patterns such as raw IP hosting, deceptive special characters, or credential-harvesting terms. Avoid visiting this link.";
+            } else if (finalScore >= 30) {
+                riskLevel = "MEDIUM RISK";
+                badgeClass = "badge-medium";
+                emoji = "🟡";
+                scoreColor = "var(--caution-color)";
+                summary = "Some suspicious characteristics detected (e.g. missing HTTPS, sensitive keywords, or unusual length). Proceed with caution and do not enter passwords.";
+            }
+
+            // Render Results
+            document.getElementById('riskBadge').className = `status-badge ${badgeClass}`;
+            document.getElementById('riskEmoji').textContent = emoji;
+            document.getElementById('riskLevelText').textContent = riskLevel;
+
+            const scoreEl = document.getElementById('scoreVal');
+            scoreEl.textContent = finalScore;
+            scoreEl.style.color = scoreColor;
+
+            document.getElementById('summaryText').textContent = summary;
+
+            const triggeredCount = indicators.filter(i => i.triggered).length;
+            document.getElementById('triggeredCount').textContent = `${triggeredCount} of 8 Triggered`;
+
+            const rulesListEl = document.getElementById('rulesList');
+            rulesListEl.innerHTML = indicators.map(ind => `
+                <div class="rule-card ${ind.triggered ? 'triggered' : 'passed'}">
+                    <div class="rule-info">
+                        <h4>${ind.id}. ${ind.name}</h4>
+                        <p>${ind.details}</p>
+                    </div>
+                    <span class="rule-badge ${ind.triggered ? 'alert' : 'pass'}">
+                        ${ind.triggered ? `⚠️ ALERT (+${ind.score} pts)` : '✅ PASSED (0 pts)'}
+                    </span>
+                </div>
+            `).join('');
+
+            document.getElementById('results-container').style.display = 'block';
+            document.getElementById('results-container').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+url,expected_risk_category,description
+https://www.google.com,LOW RISK,Official Google search engine homepage with HTTPS
+https://www.wikipedia.org/wiki/Computer_science,LOW RISK,Legitimate educational encyclopedia article
+https://github.com/explore,LOW RISK,Legitimate developer platform explore page
+https://www.microsoft.com/en-us/software-download,LOW RISK,Official Microsoft software download portal
+https://www.bbc.co.uk/news,LOW RISK,Trusted news outlet with multi-part ccTLD (.co.uk)
+http://www.example-shop.com/products/view?id=4921,LOW RISK,Standard e-commerce page missing HTTPS encryption (15 pts)
+http://bit.ly/verify-account-update-2026,MEDIUM RISK,Shortened URL with sensitive verification keyword
+https://my-blog-portal-updates.xyz/post/1049-details-overview-archive,MEDIUM RISK,Suspicious top-level domain (.xyz) with extended length
+http://account-support-service.com/signin,MEDIUM RISK,HTTP protocol combined with sensitive signin keyword and hyphens
+http://192.168.1.100/banking/login.php,HIGH RISK,Raw IP address hosting sensitive banking login page
+http://paypal.verification-account-security-update.xyz/login.php,HIGH RISK,Deceptive brand subdomain on suspicious .xyz TLD with multiple keywords
+http://google.com@malicious-attacker-host.top/phish/auth.php,HIGH RISK,Deceptive @ symbol credential trick with suspicious .top TLD
+http://secure.appleid.device-check.verify-portal.click/auth//session,HIGH RISK,Excessive subdomains with double slash in path and suspicious TLD
+http://45.134.22.91:8080/secure-banking/update-password.html,HIGH RISK,Direct IP with non-standard port and multiple credential keywords
+http://netflix-billing-account-update-recovery-alert.club/signin,HIGH RISK,Multiple hyphens with numerous credential keywords and suspicious TLD
